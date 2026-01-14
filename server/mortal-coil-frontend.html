@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortal Coil Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #00d9ff;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .board-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .board {
+            display: grid;
+            gap: 2px;
+            background: #333;
+            padding: 2px;
+            border-radius: 5px;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .cell.empty {
+            background: #2a2a4a;
+        }
+
+        .cell.empty:hover {
+            background: #3a3a6a;
+        }
+
+        .cell.blocked {
+            background: #1a1a2e;
+            cursor: not-allowed;
+        }
+
+        .cell.visited {
+            background: #00d9ff;
+            cursor: not-allowed;
+        }
+
+        .cell.player {
+            background: #00ff88;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(0.9); }
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 300px;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section h3 {
+            margin-bottom: 10px;
+            color: #00d9ff;
+            font-size: 1rem;
+        }
+
+        .level-select {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 217, 255, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .direction-buttons {
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 5px;
+            width: 150px;
+            margin: 0 auto;
+        }
+
+        .direction-buttons button {
+            padding: 15px;
+        }
+
+        .btn-up { grid-area: up; }
+        .btn-down { grid-area: down; }
+        .btn-left { grid-area: left; }
+        .btn-right { grid-area: right; }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .message.win {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .message.lose {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        .message.info {
+            background: rgba(0, 217, 255, 0.2);
+            color: #00d9ff;
+        }
+
+        .api-info {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .api-info h3 {
+            color: #00d9ff;
+            margin-bottom: 15px;
+        }
+
+        .api-endpoint {
+            background: #1a1a2e;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .api-method {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .api-path {
+            color: #00d9ff;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .connection-status.connected {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        select {
+            background: #2a2a4a;
+            border: 2px solid #00d9ff;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status disconnected" id="connectionStatus">Disconnected</div>
+    
+    <div class="container">
+        <header>
+            <h1>🐍 Mortal Coil Arena</h1>
+            <p>Besuche alle Felder ohne dich zu wiederholen!</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">Level:</span>
+                <span class="status-value" id="levelId">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Größe:</span>
+                <span class="status-value" id="boardSize">3x3</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Besucht:</span>
+                <span class="status-value"><span id="visitedCount">0</span> / <span id="totalCells">0</span></span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Status:</span>
+                <span class="status-value" id="gameStatus">Wähle Startfeld</span>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <div class="board-wrapper">
+                <div class="board" id="board"></div>
+            </div>
+
+            <div class="controls">
+                <div class="control-section">
+                    <h3>Level auswählen</h3>
+                    <select id="levelSelect"></select>
+                </div>
+
+                <div class="control-section">
+                    <h3>Steuerung</h3>
+                    <div class="direction-buttons">
+                        <button class="btn-up" onclick="move('up')" id="btnUp">↑</button>
+                        <button class="btn-left" onclick="move('left')" id="btnLeft">←</button>
+                        <button class="btn-right" onclick="move('right')" id="btnRight">→</button>
+                        <button class="btn-down" onclick="move('down')" id="btnDown">↓</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <button onclick="resetLevel()" style="width: 100%;">🔄 Level zurücksetzen</button>
+                </div>
+
+                <div id="messageBox"></div>
+            </div>
+        </div>
+
+        <div class="api-info">
+            <h3>🔌 API für externe Programme</h3>
+            <div class="api-endpoint">
+                <span class="api-method">GET</span> <span class="api-path">/api/state</span> - Aktueller Spielzustand
+            </div>
+            <div class="api-endpoint">
+                <span class="api-method">GET</span> <span class="api-path">/api/levels</span> - Liste aller Level
+            </div>
+            <div class="api-endpoint">
+                <span class="api-method">POST</span> <span class="api-path">/api/level/:id</span> - Level laden
+            </div>
+            <div class="api-endpoint">
+                <span class="api-method">POST</span> <span class="api-path">/api/start</span> - Spiel starten {"x": 0, "y": 0}
+            </div>
+            <div class="api-endpoint">
+                <span class="api-method">POST</span> <span class="api-path">/api/move</span> - Zug machen {"direction": "up|down|left|right"}
+            </div>
+            <div class="api-endpoint">
+                <span class="api-method">POST</span> <span class="api-path">/api/reset</span> - Level zurücksetzen
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let ws = null;
+        let gameState = null;
+
+        // WebSocket connection
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.host}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+            };
+
+            ws.onclose = () => {
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                // Reconnect after 2 seconds
+                setTimeout(connectWebSocket, 2000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'state') {
+                    updateGameState(data);
+                }
+            };
+        }
+
+        // Update game state and render
+        function updateGameState(state) {
+            gameState = state;
+            renderBoard();
+            updateStatusBar();
+            updateButtons();
+            checkGameEnd();
+        }
+
+        // Render the game board
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            board.style.gridTemplateColumns = `repeat(${gameState.width}, 40px)`;
+
+            for (let y = 0; y < gameState.height; y++) {
+                for (let x = 0; x < gameState.width; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    const cellData = gameState.board[y][x];
+                    
+                    if (cellData.blocked) {
+                        cell.classList.add('blocked');
+                        cell.textContent = '⬛';
+                    } else if (gameState.playerX === x && gameState.playerY === y) {
+                        cell.classList.add('player');
+                        cell.textContent = '🟢';
+                    } else if (cellData.visited) {
+                        cell.classList.add('visited');
+                        cell.textContent = '•';
+                    } else {
+                        cell.classList.add('empty');
+                        if (!gameState.started) {
+                            cell.onclick = () => startGame(x, y);
+                        }
+                    }
+                    
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        // Update status bar
+        function updateStatusBar() {
+            document.getElementById('levelId').textContent = gameState.levelId;
+            document.getElementById('boardSize').textContent = `${gameState.width}x${gameState.height}`;
+            document.getElementById('visitedCount').textContent = gameState.visitedCount;
+            document.getElementById('totalCells').textContent = gameState.totalCells;
+
+            let status = 'Wähle Startfeld';
+            if (gameState.started && !gameState.finished) {
+                status = 'Am Spielen';
+            } else if (gameState.won) {
+                status = '🎉 Gewonnen!';
+            } else if (gameState.finished) {
+                status = '💀 Verloren';
+            }
+            document.getElementById('gameStatus').textContent = status;
+        }
+
+        // Update button states
+        function updateButtons() {
+            const canMove = gameState.started && !gameState.finished;
+            document.getElementById('btnUp').disabled = !canMove;
+            document.getElementById('btnDown').disabled = !canMove;
+            document.getElementById('btnLeft').disabled = !canMove;
+            document.getElementById('btnRight').disabled = !canMove;
+        }
+
+        // Check game end and show message
+        function checkGameEnd() {
+            const messageBox = document.getElementById('messageBox');
+            
+            if (gameState.won) {
+                messageBox.innerHTML = '<div class="message win">🎉 Glückwunsch! Level geschafft!</div>';
+            } else if (gameState.finished) {
+                messageBox.innerHTML = '<div class="message lose">💀 Keine Züge mehr möglich. Versuche es erneut!</div>';
+            } else if (!gameState.started) {
+                messageBox.innerHTML = '<div class="message info">Klicke auf ein Feld, um dort zu starten</div>';
+            } else {
+                messageBox.innerHTML = '';
+            }
+        }
+
+        // Load level list
+        async function loadLevelList() {
+            const response = await fetch(`${API_BASE}/api/levels`);
+            const levels = await response.json();
+            
+            const select = document.getElementById('levelSelect');
+            select.innerHTML = levels.map(level => 
+                `<option value="${level.id}">Level ${level.id} (${level.width}x${level.height})</option>`
+            ).join('');
+            
+            select.onchange = () => loadLevel(parseInt(select.value));
+        }
+
+        // API calls
+        async function loadLevel(id) {
+            await fetch(`${API_BASE}/api/level/${id}`, { method: 'POST' });
+        }
+
+        async function startGame(x, y) {
+            await fetch(`${API_BASE}/api/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x, y })
+            });
+        }
+
+        async function move(direction) {
+            await fetch(`${API_BASE}/api/move`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ direction })
+            });
+        }
+
+        async function resetLevel() {
+            await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameState || !gameState.started || gameState.finished) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    move('up');
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    move('down');
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    move('left');
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    move('right');
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        // Initialize
+        loadLevelList();
+        connectWebSocket();
+    </script>
+</body>
+</html>

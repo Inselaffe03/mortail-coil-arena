@@ -1,0 +1,15 @@
+{
+  "name": "mortal-coil-arena-server",
+  "version": "1.0.0",
+  "description": "Mortal Coil Arena Backend Server",
+  "main": "mortal-coil.js",
+  "scripts": {
+    "start": "node mortal-coil.js",
+    "dev": "node --watch mortal-coil.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "cors": "^2.8.5"
+  }
+}
